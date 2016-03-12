@@ -40,8 +40,7 @@ defmodule Xlsxir.Mixfile do
 
   defp description do
     """
-    Xlsxir is an Elixir library that parses Microsoft Excel worksheets (currently only .xlsx format) 
-    and returns the data in either a `list` or a `map`.
+    Parses Microsoft Excel worksheets (currently only .xlsx format) and returns the data in either a `list` or a `map`.
     """
   end
 

@@ -32,7 +32,7 @@ Options:
   - `:rows` - a list of row value lists (default) - i.e. `[[row_1_values], [row_2_values], ...] `
   - `:cells` - a map of cell/value pairs - i.e. `%{ A1: value_of_cell, B1: value_of_cell, ...}`
 
-Refer to Xlsxir library documentation for more detailed examples. 
+Refer to [Xlsxir library](https://kennellroxco.github.io) documentation for more detailed examples. 
 
 ## Considerations
 

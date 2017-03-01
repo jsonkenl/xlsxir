@@ -108,11 +108,16 @@ defmodule Xlsxir.ParseWorksheet do
 
   defp convert_date_or_time(value) do
     str = List.to_string(value)
-
-    if str == "0" || String.match?(str, ~r/\d\.\d+/) do
-      ConvertTime.from_charlist(value)
-    else
-      ConvertDate.from_serial(value)
+    case Regex.named_captures(~r/(?<date>\d+)\.?(?<time>\d*)/, str) do
+      %{"date" => date_value, "time" => ""} ->
+        ConvertDate.from_serial(String.to_charlist(date_value))
+      %{"date" => "0", "time" => time_value} ->
+        ConvertTime.from_charlist(String.to_charlist("0.#{time_value}"))
+      %{"date" => date_value, "time" => time_value} ->
+        {
+          ConvertDate.from_serial(String.to_charlist(date_value)),
+          ConvertTime.from_charlist(String.to_charlist("0.#{time_value}"))
+        }
     end
   end
 

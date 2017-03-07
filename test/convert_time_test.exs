@@ -1,8 +1,8 @@
 defmodule ConvertTimeTest do
   use ExUnit.Case
-  doctest Xlsxir.ConvertTime
+  doctest Xlsxir.ConvertDateTime
 
-  import Xlsxir.ConvertTime
+  import Xlsxir.ConvertDateTime
 
   @test_data %{'0.0' => {0, 0 , 0},
                '0.25' => {6, 0, 0},

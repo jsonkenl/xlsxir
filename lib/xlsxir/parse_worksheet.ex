@@ -1,13 +1,13 @@
 defmodule Xlsxir.ParseWorksheet do
-  alias Xlsxir.{Codepoint, ConvertDate, ConvertTime,
-                SharedString, Style, TableId, Worksheet}
+  alias Xlsxir.{Codepoint, ConvertDate, ConvertDateTime,
+                SharedString, Style, TableId, Worksheet, SaxError}
   import Xlsxir.ConvertDate, only: [convert_char_number: 1]
-
+  require Logger
   @moduledoc """
   Holds the SAX event instructions for parsing worksheet data via `Xlsxir.SaxParser.parse/2`
   """
 
-  defstruct row: %{}, cell_ref: "", data_type: "", num_style: "", value: ""
+  defstruct row: %{}, cell_ref: "", data_type: "", num_style: "", value: "", max_rows: nil
 
   @doc """
   Sax event utilized by `Xlsxir.SaxParser.parse/2`. Takes a pattern and the current state of a struct and recursivly parses the
@@ -24,7 +24,9 @@ defmodule Xlsxir.ParseWorksheet do
   """
   def sax_event_handler({:startElement,_,'row',_,_}, _state) do
     Codepoint.new
-    %Xlsxir.ParseWorksheet{}
+    %Xlsxir.ParseWorksheet{
+      max_rows: Agent.get(MaxRows, &(&1))
+    }
   end
 
   def sax_event_handler({:startElement,_,'c',_,xml_attr}, state) do
@@ -58,7 +60,6 @@ defmodule Xlsxir.ParseWorksheet do
   def sax_event_handler({:endElement,_,'c',_}, %Xlsxir.ParseWorksheet{row: row} = state) do
     cell_value = format_cell_value([state.data_type, state.num_style, state.value])
     new_cells  = compare_to_previous_cell(to_string(state.cell_ref), cell_value)
-
     %{state | row: Enum.into(row, new_cells), cell_ref: "", data_type: "", num_style: "", value: ""}
   end
 
@@ -68,7 +69,6 @@ defmodule Xlsxir.ParseWorksheet do
     unless Enum.empty?(state.row) do
       [[row]] = ~r/\d+/ |> Regex.scan(state.row |> List.first |> List.first)
       row     = row |> String.to_integer
-
       if TableId.alive? do
         state.row
         |> Enum.reverse
@@ -78,6 +78,7 @@ defmodule Xlsxir.ParseWorksheet do
         |> Enum.reverse
         |> Worksheet.add_row(row)
       end
+      if !is_nil(state.max_rows) and row == state.max_rows, do: raise SaxError
     end
     state
   end
@@ -110,7 +111,7 @@ defmodule Xlsxir.ParseWorksheet do
     str = List.to_string(value)
 
     if str == "0" || String.match?(str, ~r/\d\.\d+/) do
-      ConvertTime.from_charlist(value)
+      ConvertDateTime.from_charlist(value)
     else
       ConvertDate.from_serial(value)
     end

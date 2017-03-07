@@ -4,7 +4,7 @@ defmodule Xlsxir.SaxParser do
   parsing algorithm for parsing large XML files in chunks, preventing the need to load the entire DOM into memory. Current chunk size is set to 10,000.
   """
 
-  alias Xlsxir.{ParseString, ParseStyle, ParseWorksheet, SharedString, Style, TableId, Worksheet}
+  alias Xlsxir.{ParseString, ParseStyle, ParseWorksheet, SharedString, Style, TableId, Worksheet, SaxError}
 
   @chunk 10000
 
@@ -17,6 +17,7 @@ defmodule Xlsxir.SaxParser do
 
   - `path` - path of XML file to be parsed in `string` format
   - `type` - file type identifier (:worksheet, :style or :string) of XML file to be parsed
+  - `max_rows` - the maximum number of rows in this worksheet that should be parsed
 
   ## Example
     An example file named `test.xlsx` located in `./test/test_data` containing the following in worksheet at index `0`:
@@ -43,7 +44,7 @@ defmodule Xlsxir.SaxParser do
           iex> Xlsxir.Worksheet.delete
           true
   """
-  def parse(path, type) do
+  def parse(path, type, max_rows \\ nil) do
     case type do
       :worksheet -> Worksheet.new
       :multi     -> Worksheet.new_multi
@@ -56,18 +57,23 @@ defmodule Xlsxir.SaxParser do
     index   = 0
     c_state = {pid, index, @chunk}
 
-    :erlsom.parse_sax("",
-      nil,
-      case type do
-        :worksheet -> &ParseWorksheet.sax_event_handler/2
-        :multi     -> &ParseWorksheet.sax_event_handler/2
-        :style     -> &ParseStyle.sax_event_handler/2
-        :string    -> &ParseString.sax_event_handler/2
-        _          -> raise "Invalid file type for sax_event_handler/2"
-      end,
-      [{:continuation_function, &continue_file/2, c_state}])
-
-    File.close(pid)
+    try do
+      Agent.start(fn -> max_rows end, name: MaxRows)
+      :erlsom.parse_sax("",
+        nil,
+        case type do
+          :worksheet -> &ParseWorksheet.sax_event_handler/2
+          :multi     -> &ParseWorksheet.sax_event_handler/2
+          :style     -> &ParseStyle.sax_event_handler/2
+          :string    -> &ParseString.sax_event_handler/2
+          _          -> raise "Invalid file type for sax_event_handler/2"
+        end,
+        [{:continuation_function, &continue_file/2, c_state}])
+      rescue e in SaxError -> nil # Logger.debug "SaxError thrown: #{inspect e}"
+      after
+        Agent.stop(MaxRows)
+        File.close(pid)
+    end
 
     if type == :multi do
       table_id = TableId.get

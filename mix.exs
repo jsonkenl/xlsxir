@@ -7,7 +7,7 @@ defmodule Xlsxir.Mixfile do
      version: "1.4.1",
      name: "Xlsxir",
      source_url: "https://github.com/kennellroxco/xlsxir",
-     elixir: "~> 1.2",
+     elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: description,
@@ -18,13 +18,14 @@ defmodule Xlsxir.Mixfile do
   end
 
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :timex]]
   end
 
   defp deps do
     [ 
       { :ex_doc, github: "elixir-lang/ex_doc", only: :dev },
       { :earmark, github: "pragdave/earmark", override: true, only: :dev },
+      { :timex, "~> 3.0"},
       { :erlsom, "~> 1.4" }
     ]
   end

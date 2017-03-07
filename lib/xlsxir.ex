@@ -16,7 +16,7 @@ defmodule Xlsxir do
   ## Parameters
   - `path` - file path of a `.xlsx` file type in `string` format
   - `index` - index of worksheet from within the Excel workbook to be parsed (zero-based index)
-  - `timer` - boolean flag that tracts extraction process time and returns it when set to `true`. Defalut value is `false`.
+  - `timer` - boolean flag that tracks extraction process time and returns it when set to `true`. Defalut value is `false`.
 
   ## Example
   Extract first worksheet in an example file named `test.xlsx` located in `./test/test_data`:
@@ -30,14 +30,12 @@ defmodule Xlsxir do
   """
   def extract(path, index, timer \\ false) do
     if timer, do: Timer.start
-
     case Unzip.validate_path_and_index(path, index) do
-      {:ok, file}      -> Unzip.xml_file_list(index)
-                          |> Unzip.extract_xml_to_file(file)
-                          |> case do
-                               {:ok, file_paths} -> do_extract(file_paths, index, timer)
-                               {:error, reason}  -> {:error, reason}
-                             end
+      {:ok, file}      ->
+        case extract_xml(file, index) do
+          {:ok, file_paths} -> do_extract(file_paths, index, timer)
+          {:error, reason}  -> {:error, reason}
+        end
       {:error, reason} -> {:error, reason}
     end
   end
@@ -52,6 +50,56 @@ defmodule Xlsxir do
     end)
 
     SaxParser.parse("temp/xl/worksheets/sheet#{index + 1}.xml", :worksheet)
+    Unzip.delete_dir
+
+    if timer, do: {:ok, Timer.stop}, else: :ok
+  end
+
+  @doc """
+  Extracts the first n number of rows from the specified worksheet contained in the specified `.xlsx` file to an ETS process
+  named `:worksheet` which is accessed via the `Xlsxir.Worksheet` module. Successful extraction returns `:ok`
+
+  ## Parameters
+  - `path` - file path of a `.xlsx` file type in `string` format
+  - `index` - index of worksheet from within the Excel workbook to be parsed (zero-based index)
+  - `rows` - the number of rows to fetch from within the specified worksheet
+
+  ## Example
+  Peek at the first 10 rows of the 9th worksheet in an example file named `test.xlsx` located in `./test/test_data`:
+
+        iex> Xlsxir.peek("./test/test_data/test.xlsx", 8, 10)
+        :ok
+        iex> Xlsxir.Worksheet.alive?
+        true
+        iex> Xlsxir.close
+        :ok
+  """
+  def peek(path, index, rows) do
+    case Unzip.validate_path_and_index(path, index) do
+      {:ok, file}      -> 
+        case extract_xml(file, index) do
+          {:ok, file_paths} -> do_extract(file_paths, index, false, rows)
+          {:error, reason}  -> {:error, reason}
+        end
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp extract_xml(file, index) do
+    Unzip.xml_file_list(index)
+    |> Unzip.extract_xml_to_file(file)
+  end
+
+  defp do_extract(file_paths, index, timer, max_rows \\ nil) do
+    Enum.each(file_paths, fn file ->
+      case file do
+        'temp/xl/sharedStrings.xml' -> SaxParser.parse(to_string(file), :string)
+        'temp/xl/styles.xml'        -> SaxParser.parse(to_string(file), :style)
+        _                           -> nil
+      end
+    end)
+
+    SaxParser.parse("temp/xl/worksheets/sheet#{index + 1}.xml", :worksheet, max_rows)
     Unzip.delete_dir
 
     if timer, do: {:ok, Timer.stop}, else: :ok

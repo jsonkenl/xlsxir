@@ -73,6 +73,7 @@ defmodule Xlsxir.Unzip do
           |> String.to_integer
           index - 1
         end)
+        |> Enum.sort
         {:ok, indexes}
       {:error, _reason} -> {:error, "Invalid file type."}
     end

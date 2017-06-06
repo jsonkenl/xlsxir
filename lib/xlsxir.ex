@@ -41,16 +41,21 @@ defmodule Xlsxir do
   end
 
   defp do_extract(file_paths, index, timer) do
-    Enum.each(file_paths, fn file ->
+    Enum.each(file_paths, fn {file, content} ->
       case file do
-        'temp/xl/sharedStrings.xml' -> SaxParser.parse(to_string(file), :string)
-        'temp/xl/styles.xml'        -> SaxParser.parse(to_string(file), :style)
+        'xl/sharedStrings.xml' -> SaxParser.parse(content, :string)
+        'xl/styles.xml'        -> SaxParser.parse(content, :style)
         _                           -> nil
       end
     end)
 
-    SaxParser.parse("temp/xl/worksheets/sheet#{index + 1}.xml", :worksheet)
-    Unzip.delete_dir
+    sheet = Enum.find(file_paths, fn {path, _} ->
+      path == 'xl/worksheets/sheet#{index + 1}.xml'
+    end)
+
+    if sheet do
+      SaxParser.parse(elem(sheet, 1), :worksheet)
+    end
 
     if timer, do: {:ok, Timer.stop}, else: :ok
   end
@@ -87,20 +92,25 @@ defmodule Xlsxir do
 
   defp extract_xml(file, index) do
     Unzip.xml_file_list(index)
-    |> Unzip.extract_xml_to_file(file)
+    |> Unzip.extract_xml_to_memory(file)
   end
 
   defp do_peek_extract(file_paths, index, timer, max_rows) do
-    Enum.each(file_paths, fn file ->
+    Enum.each(file_paths, fn {file, content} ->
       case file do
-        'temp/xl/sharedStrings.xml' -> SaxParser.parse(to_string(file), :string)
-        'temp/xl/styles.xml'        -> SaxParser.parse(to_string(file), :style)
+        'xl/sharedStrings.xml' -> SaxParser.parse(content, :string)
+        'xl/styles.xml'        -> SaxParser.parse(content, :style)
         _                           -> nil
       end
     end)
 
-    SaxParser.parse("temp/xl/worksheets/sheet#{index + 1}.xml", :worksheet, max_rows)
-    Unzip.delete_dir
+    sheet = Enum.find(file_paths, fn {path, _} ->
+      path == 'xl/worksheets/sheet#{index + 1}.xml'
+    end)
+
+    if sheet do
+      SaxParser.parse(elem(sheet, 1), :worksheet, max_rows)
+    end
 
     if SharedString.alive?, do: SharedString.delete
     if Style.alive?, do: Style.delete
@@ -165,7 +175,7 @@ defmodule Xlsxir do
 
         case Unzip.validate_path_and_index(path, index) do
           {:ok, file}      -> Unzip.xml_file_list(index)
-          |> Unzip.extract_xml_to_file(file)
+          |> Unzip.extract_xml_to_memory(file)
           |> case do
             {:ok, file_paths} -> do_multi_extract(file_paths, index, timer)
             {:error, reason}  -> {:error, reason}
@@ -176,16 +186,19 @@ defmodule Xlsxir do
   end
 
   defp do_multi_extract(file_paths, index, timer) do
-      Enum.each(file_paths, fn file ->
+      Enum.each(file_paths, fn {file, content} ->
       case file do
-        'temp/xl/sharedStrings.xml' -> SaxParser.parse(to_string(file), :string)
-        'temp/xl/styles.xml'        -> SaxParser.parse(to_string(file), :style)
+        'xl/sharedStrings.xml' -> SaxParser.parse(content, :string)
+        'xl/styles.xml'        -> SaxParser.parse(content, :style)
         _                           -> nil
       end
     end)
 
-    {:ok, table_id} = SaxParser.parse("temp/xl/worksheets/sheet#{index + 1}.xml", :multi)
-    Unzip.delete_dir
+    {_, content} = Enum.find(file_paths, fn {path, _} ->
+      path == 'xl/worksheets/sheet#{index + 1}.xml'
+    end)
+
+    {:ok, table_id} = SaxParser.parse(content, :multi)
 
     if timer, do: {:ok, table_id, Timer.stop}, else: {:ok, table_id}
   end

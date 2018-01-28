@@ -64,6 +64,7 @@ Unsucessful parsing of a specific worksheet returns `{:error, reason}`.
 
 <br/>
 The extracted worksheet data can be accessed using any of the following functions:
+
 ```elixir
 Xlsxir.get_list(table_id)
 Xlsxir.get_map(table_id)

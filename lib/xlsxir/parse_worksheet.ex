@@ -66,7 +66,7 @@ defmodule Xlsxir.ParseWorksheet do
 
   def sax_event_handler({:endElement,_,'c',_}, %__MODULE__{row: row} = state, excel) do
     cell_value = format_cell_value(excel, [state.data_type, state.num_style, state.value])
-    %{state | row: Enum.into(row, [[to_string(state.cell_ref), cell_value]]), cell_ref: "", data_type: "", num_style: "", value: ""}
+    %{state | row: row ++ [[to_string(state.cell_ref), cell_value]]), cell_ref: "", data_type: "", num_style: "", value: ""}
   end
 
   def sax_event_handler({:endElement,_,'row',_}, %__MODULE__{tid: tid, max_rows: max_rows} = state, _excel) do

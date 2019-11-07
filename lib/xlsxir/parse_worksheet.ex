@@ -31,25 +31,9 @@ defmodule Xlsxir.ParseWorksheet do
   def sax_event_handler(
         :startDocument,
         _state,
-        %{max_rows: max_rows, workbook: workbook_tid},
-        xml_name
+        %{max_rows: max_rows}
       ) do
     tid = GenServer.call(Xlsxir.StateManager, :new_table)
-
-    "sheet" <> remained = xml_name
-    {rid, _} = Integer.parse(remained)
-
-    worksheet_name =
-      List.foldl(:ets.lookup(workbook_tid, rid), nil, fn value, _ ->
-        case value do
-          {_, worksheet_name} -> worksheet_name
-          _ -> nil
-        end
-      end)
-
-    # [{_, worksheet_name} | _] = :ets.lookup(workbook_tid, rid)
-
-    :ets.insert(tid, {:info, :worksheet_name, worksheet_name})
 
     %__MODULE__{tid: tid, max_rows: max_rows}
   end
@@ -57,13 +41,12 @@ defmodule Xlsxir.ParseWorksheet do
   def sax_event_handler(
         {:startElement, _, 'row', _, _},
         %__MODULE__{tid: tid, max_rows: max_rows},
-        _excel,
-        _
+        _xlsx_file
       ) do
     %__MODULE__{tid: tid, max_rows: max_rows}
   end
 
-  def sax_event_handler({:startElement, _, 'c', _, xml_attr}, state, %{styles: styles_tid}, _) do
+  def sax_event_handler({:startElement, _, 'c', _, xml_attr}, state, %{styles: styles_tid}) do
     a =
       Enum.map(xml_attr, fn attr ->
         case attr do
@@ -86,15 +69,15 @@ defmodule Xlsxir.ParseWorksheet do
     %{state | cell_ref: cell_ref, num_style: num_style, data_type: data_type}
   end
 
-  def sax_event_handler({:startElement, _, 'f', _, _}, state, _, _) do
+  def sax_event_handler({:startElement, _, 'f', _, _}, state, _) do
     %{state | value_type: :formula}
   end
 
-  def sax_event_handler({:startElement, _, 'v', _, _}, state, _, _) do
+  def sax_event_handler({:startElement, _, 'v', _, _}, state, _) do
     %{state | value_type: :value}
   end
 
-  def sax_event_handler({:characters, value}, state, _, _) do
+  def sax_event_handler({:characters, value}, state, _) do
     case state do
       nil -> nil
       %{value_type: :value} -> %{state | value: value}
@@ -102,8 +85,8 @@ defmodule Xlsxir.ParseWorksheet do
     end
   end
 
-  def sax_event_handler({:endElement, _, 'c', _}, %__MODULE__{row: row} = state, excel, _) do
-    cell_value = format_cell_value(excel, [state.data_type, state.num_style, state.value])
+  def sax_event_handler({:endElement, _, 'c', _}, %__MODULE__{row: row} = state, xlsx_file) do
+    cell_value = format_cell_value(xlsx_file, [state.data_type, state.num_style, state.value])
     new_cell = [to_string(state.cell_ref), cell_value]
 
     %{
@@ -119,8 +102,7 @@ defmodule Xlsxir.ParseWorksheet do
   def sax_event_handler(
         {:endElement, _, 'row', _},
         %__MODULE__{tid: tid, max_rows: max_rows} = state,
-        _excel,
-        _
+        _xlsx_file
       ) do
     unless Enum.empty?(state.row) do
       [[row]] = ~r/\d+/ |> Regex.scan(state.row |> List.first() |> List.first())
@@ -134,7 +116,7 @@ defmodule Xlsxir.ParseWorksheet do
     state
   end
 
-  def sax_event_handler(_, state, _, _), do: state
+  def sax_event_handler(_, state, _), do: state
 
   defp format_cell_value(%{shared_strings: strings_tid}, list) do
     case list do

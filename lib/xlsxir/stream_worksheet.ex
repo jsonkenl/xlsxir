@@ -28,13 +28,13 @@ defmodule Xlsxir.StreamWorksheet do
   Each row data sent consists of a list containing a cell reference string
   and the associated value (i.e. `[["A1", "string one"], ...]`).
   """
-  def sax_event_handler(sax_pattern, state, excel)
+  def sax_event_handler(sax_pattern, state, xlsx_file)
 
   def sax_event_handler(:startDocument, _state, %Xlsxir.XlsxFile{}) do
     %ParseWorksheet{}
   end
 
-  def sax_event_handler({:endElement, _, 'row', _}, state, _excel) do
+  def sax_event_handler({:endElement, _, 'row', _}, state, _xlsx_file) do
     unless Enum.empty?(state.row) do
       value = state.row |> Enum.reverse()
 
@@ -56,7 +56,7 @@ defmodule Xlsxir.StreamWorksheet do
   end
 
   # Delegates other SAX events to Xlsxir.ParseWorksheet
-  def sax_event_handler(sax_event, state, excel) do
-    ParseWorksheet.sax_event_handler(sax_event, state, excel, nil)
+  def sax_event_handler(sax_event, state, xlsx_file) do
+    ParseWorksheet.sax_event_handler(sax_event, state, xlsx_file)
   end
 end

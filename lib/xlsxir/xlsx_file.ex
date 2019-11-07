@@ -22,6 +22,8 @@ defmodule Xlsxir.XlsxFile do
             styles_xml_file: nil,
             # workbook %XmlFile{}
             workbook_xml_file: nil,
+            # workbook %XmlFile{}
+            workbook_xml_rels_file: nil,
             # ets table id
             styles: nil,
             # ets table id
@@ -60,10 +62,12 @@ defmodule Xlsxir.XlsxFile do
 
     %__MODULE__{max_rows: max_rows, extract_to: extract_to, extract_dir: extract_dir}
     # Could be optimized to only unzip commons and requested worksheet
-    |> extract_all_xml_files(xlsx_filepath)
-    |> parse_shared_strings_to_ets
-    |> parse_styles_to_ets
+    |> extract_workbook_xml_files(xlsx_filepath)
     |> parse_workbook_to_ets
+    |> parse_shared_strings_to_ets
+    |> extract_worksheet_xml_files(xlsx_filepath)
+    |> parse_styles_to_ets
+    |> extract_worksheet_xml_files(xlsx_filepath)
   end
 
   @doc """
@@ -92,6 +96,15 @@ defmodule Xlsxir.XlsxFile do
     {:ok, %Xlsxir.ParseWorksheet{tid: tid}, _} =
       SaxParser.parse(worksheet_xml_file, :worksheet, xlsx_file)
 
+    [{:worksheet_relationships, rels}] = :ets.lookup(xlsx_file.workbook, :worksheet_relationships)
+
+    {rid, _} =
+      Enum.find(rels, fn {_, target} -> String.ends_with?(target, worksheet_xml_file.name) end)
+
+    [{^rid, worksheet_name, _index}] = :ets.lookup(xlsx_file.workbook, rid)
+
+    :ets.insert(tid, {:info, :worksheet_name, worksheet_name})
+
     {:ok, tid}
   end
 
@@ -102,6 +115,7 @@ defmodule Xlsxir.XlsxFile do
   """
   def parse_all_to_ets(%__MODULE__{} = xlsx_file, timer \\ false) do
     xlsx_file.worksheet_xml_files
+    # FIXME this is wrong
     # Sort worksheets by name (i.e. index)
     |> Enum.sort(&(&1.name <= &2.name))
     |> Enum.map(&parse_to_ets(xlsx_file, &1, timer))
@@ -186,22 +200,53 @@ defmodule Xlsxir.XlsxFile do
     clean(xlsx_file)
   end
 
-  defp extract_all_xml_files(%__MODULE__{} = xlsx_file, xlsx_filepath) do
-    with {:ok, worksheet_indexes} <- Unzip.validate_path_all_indexes(xlsx_filepath),
-         xml_paths_list <- zip_paths_list(worksheet_indexes),
-         {:ok, xml_files} <-
-           Unzip.extract_xml(xml_paths_list, xlsx_filepath, unzip_options(xlsx_file)) do
+  @xml_paths_list [
+    'xl/styles.xml',
+    'xl/sharedStrings.xml',
+    'xl/workbook.xml',
+    'xl/_rels/workbook.xml.rels'
+  ]
+
+  defp extract_workbook_xml_files(%__MODULE__{} = xlsx_file, xlsx_filepath) do
+    with {:ok, xml_files} <-
+           Unzip.extract_xml(@xml_paths_list, xlsx_filepath, unzip_options(xlsx_file)) do
       %{
         xlsx_file
-        | worksheet_xml_files:
-            xml_files
-            |> Enum.filter(fn %XmlFile{name: name} -> String.starts_with?(name, "sheet") end),
+        | workbook_xml_file:
+            xml_files |> Enum.find(fn %XmlFile{name: name} -> name == "workbook.xml" end),
+          workbook_xml_rels_file:
+            xml_files |> Enum.find(fn %XmlFile{name: name} -> name == "workbook.xml.rels" end),
           shared_strings_xml_file:
             xml_files |> Enum.find(fn %XmlFile{name: name} -> name == "sharedStrings.xml" end),
           styles_xml_file:
-            xml_files |> Enum.find(fn %XmlFile{name: name} -> name == "styles.xml" end),
-          workbook_xml_file:
-            xml_files |> Enum.find(fn %XmlFile{name: name} -> name == "workbook.xml" end)
+            xml_files |> Enum.find(fn %XmlFile{name: name} -> name == "styles.xml" end)
+      }
+    end
+  end
+
+  defp extract_worksheet_xml_files(:error, _xlsx_filepath), do: :error
+  defp extract_worksheet_xml_files({:error, _} = error, _xlsx_filepath), do: error
+
+  defp extract_worksheet_xml_files(%__MODULE__{} = xlsx_file, xlsx_filepath) do
+    [{:worksheet_relationships, rels}] = :ets.lookup(xlsx_file.workbook, :worksheet_relationships)
+
+    sheet_paths_list =
+      Enum.map(rels, fn {_rid, target} -> Path.join("xl", target) |> String.to_charlist() end)
+
+    with {:ok, xml_files} <-
+           Unzip.extract_xml(sheet_paths_list, xlsx_filepath, unzip_options(xlsx_file)) do
+      %{
+        xlsx_file
+        | # Unzipped files are not returned in the file list order
+          # We sort them by order of occurence in the workbook.xml for index-based access
+          worksheet_xml_files:
+            Enum.sort_by(xml_files, fn %{name: basename} ->
+              {rid, _} =
+                Enum.find(rels, fn {_rid, target} -> String.ends_with?(target, basename) end)
+
+              [{^rid, _name, index}] = :ets.lookup(xlsx_file.workbook, rid)
+              index
+            end)
       }
     end
   end
@@ -211,12 +256,6 @@ defmodule Xlsxir.XlsxFile do
       :file -> {:file, xlsx_file.extract_dir}
       :memory -> :memory
     end
-  end
-
-  defp zip_paths_list(worksheet_indexes) do
-    worksheet_indexes
-    |> Enum.map(fn worksheet_index -> 'xl/worksheets/sheet#{worksheet_index + 1}.xml' end)
-    |> Enum.concat(['xl/styles.xml', 'xl/sharedStrings.xml', 'xl/workbook.xml'])
   end
 
   defp parse_styles_to_ets(%__MODULE__{styles_xml_file: nil} = xlsx_file), do: xlsx_file
@@ -232,10 +271,13 @@ defmodule Xlsxir.XlsxFile do
     do: xlsx_file
 
   defp parse_workbook_to_ets(%__MODULE__{} = xlsx_file) do
-    {:ok, %Xlsxir.ParseWorkbook{tid: tid}, _} =
+    {:ok, %Xlsxir.ParseWorkbook{tid: workbook_tid}, _} =
       SaxParser.parse(xlsx_file.workbook_xml_file, :workbook)
 
-    %{xlsx_file | workbook: tid}
+    {:ok, %Xlsxir.ParseRelationships{}, _} =
+      SaxParser.parse(xlsx_file.workbook_xml_rels_file, :workbook_rels, nil, workbook_tid)
+
+    %{xlsx_file | workbook: workbook_tid}
   end
 
   defp parse_workbook_to_ets({:error, _} = error), do: error
@@ -253,14 +295,12 @@ defmodule Xlsxir.XlsxFile do
   defp parse_shared_strings_to_ets({:error, _} = error), do: error
 
   defp get_worksheet(%__MODULE__{} = xlsx_file, index) do
-    xml_file =
-      Enum.find(xlsx_file.worksheet_xml_files, fn xml_file ->
-        xml_file.name == "sheet#{index + 1}.xml"
-      end)
+    case Enum.at(xlsx_file.worksheet_xml_files, index) do
+      nil ->
+        {:error, "Invalid worksheet index."}
 
-    case xml_file do
-      nil -> {:error, "Invalid worksheet index."}
-      %XmlFile{} -> {:ok, xml_file}
+      %XmlFile{} = xml_file ->
+        {:ok, xml_file}
     end
   end
 

@@ -9,6 +9,7 @@ defmodule Xlsxir.SaxParser do
     ParseStyle,
     ParseWorkbook,
     ParseWorksheet,
+    ParseRelationships,
     StreamWorksheet,
     SaxError,
     XmlFile
@@ -45,13 +46,13 @@ defmodule Xlsxir.SaxParser do
           iex> :ets.lookup(tid2, 0)
           [{0, "string one"}]
           iex> {:ok, %Xlsxir.ParseWorkbook{tid: tid3}, _} = Xlsxir.SaxParser.parse(%Xlsxir.XmlFile{content: File.read!("./test/test_data/test/xl/workbook.xml")}, :workbook)
-          iex> :ets.lookup(tid3, 1)
-          [{1, "Sheet1"}]
+          iex> :ets.lookup(tid3, "rId1")
+          [{"rId1", "Sheet1", 0}]
           iex> {:ok, %Xlsxir.ParseWorksheet{tid: tid4}, _} = Xlsxir.SaxParser.parse(%Xlsxir.XmlFile{name: "sheet1.xml", content: File.read!("./test/test_data/test/xl/worksheets/sheet1.xml")}, :worksheet, %Xlsxir.XlsxFile{shared_strings: tid2, styles: tid1, workbook: tid3})
           iex> :ets.lookup(tid4, 1)
           [{1, [["A1", "string one"], ["B1", "string two"], ["C1", 10], ["D1", 20], ["E1", {2016, 1, 1}]]}]
   """
-  def parse(%XmlFile{} = xml_file, type, excel \\ nil) do
+  def parse(%XmlFile{} = xml_file, type, xslx_file \\ nil, initial_state \\ nil) do
     {:ok, file_pid} = XmlFile.open(xml_file)
 
     index = 0
@@ -60,12 +61,13 @@ defmodule Xlsxir.SaxParser do
     try do
       :erlsom.parse_sax(
         "",
-        nil,
+        initial_state,
         case type do
-          :worksheet -> &ParseWorksheet.sax_event_handler(&1, &2, excel, xml_file.name)
-          :stream_worksheet -> &StreamWorksheet.sax_event_handler(&1, &2, excel)
+          :worksheet -> &ParseWorksheet.sax_event_handler(&1, &2, xslx_file)
+          :stream_worksheet -> &StreamWorksheet.sax_event_handler(&1, &2, xslx_file)
           :style -> &ParseStyle.sax_event_handler(&1, &2)
           :workbook -> &ParseWorkbook.sax_event_handler(&1, &2)
+          :workbook_rels -> &ParseRelationships.sax_event_handler(&1, &2)
           :string -> &ParseString.sax_event_handler(&1, &2)
           _ -> raise "Invalid file type for sax_event_handler/2"
         end,

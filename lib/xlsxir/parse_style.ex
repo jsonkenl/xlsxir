@@ -32,7 +32,7 @@ defmodule Xlsxir.ParseStyle do
     69,
     70
   ]
-  @date [14, 15, 16, 17, 18, 19, 20, 21, 22, 27, 30, 36, 45, 46, 47, 50, 57]
+  @date [7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 27, 30, 36, 45, 46, 47, 50, 57]
 
   defstruct custom_style: %{}, cellxfs: false, index: 0, tid: nil, num_fmt_ids: []
 

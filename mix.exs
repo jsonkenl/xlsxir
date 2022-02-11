@@ -20,7 +20,7 @@ defmodule Xlsxir.Mixfile do
   def application do
     [
       mod: {Xlsxir, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :crypto]
     ]
   end
 

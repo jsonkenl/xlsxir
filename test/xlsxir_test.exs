@@ -6,6 +6,7 @@ defmodule XlsxirTest do
   def path(), do: "./test/test_data/test.xlsx"
   def rb_path(), do: "./test/test_data/red_black.xlsx"
   def missing_styles_path(), do: "./test/test_data/missing_styles.xlsx"
+  def currency_styles_path(), do: "./test/test_data/currency_styles.xlsx"
 
   test "second worksheet is parsed with index argument of 1" do
     {:ok, pid} = extract(path(), 1)
@@ -120,6 +121,25 @@ defmodule XlsxirTest do
     expected_rows = [
       ["Tag", "Type", "Status", "Commissioned"],
       ["abc123", "InProgress", "Complete", ~N[2019-06-21 02:39:11]]
+    ]
+
+    assert get_list(pid) == expected_rows
+    close(pid)
+  end
+
+  test "parses successfully even with columns that have currency styles defined" do
+    {:ok, pid} = extract(currency_styles_path(), 0)
+
+    expected_rows = [
+      ["Style 5", "Style 6", "Style 7", "Style 8"],
+      [
+        "$#,##0_);($#,##0)",
+        "$#,##0_);[Red]($#,##0)",
+        "$#,##0.00_);($#,##0.00)",
+        "$#,##0.00_);[Red]($#,##0.00)"
+      ],
+      [1234.5678, 2345.6789, 3456.7890, 4567.8901],
+      [-1234.5678, -2345.6789, -3456.7890, -4567.8901]
     ]
 
     assert get_list(pid) == expected_rows

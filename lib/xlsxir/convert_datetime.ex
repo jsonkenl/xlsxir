@@ -30,9 +30,11 @@ defmodule Xlsxir.ConvertDateTime do
   end
 
   defp convert_from_serial(time) when is_float(time) and time >= 0 and time < 1.0 do
-    {hours, min_fraction} = split_float(time * 24)
-    {minutes, sec_fraction} = split_float(min_fraction * 60)
-    {seconds, _} = split_float(sec_fraction * 60)
+    total_seconds = (time * 86400) |> Float.round(2) |> trunc()
+
+    hours = div(total_seconds, 60 * 60)
+    minutes = div(total_seconds - hours * 60 * 60, 60)
+    seconds = total_seconds - hours * 60 * 60 - minutes * 60
 
     {hours, minutes, seconds}
   end

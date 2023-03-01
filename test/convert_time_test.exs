@@ -9,7 +9,9 @@ defmodule ConvertTimeTest do
                '0.5' => {12, 0, 0},
                '0.29166666666666669' => {7, 0, 0},
                '0.64583333333333337' => {15, 30, 0},
-               '0.754'=> {18, 5, 45}}
+               '0.754'=> {18, 5, 45},
+               '0.395833333333333' => {9, 30, 0}
+              }
 
 
   test "converts fractions to the appropriate numbers" do

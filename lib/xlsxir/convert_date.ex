@@ -18,20 +18,27 @@ defmodule Xlsxir.ConvertDate do
       {1975, 4, 30}
   """
   def from_serial(serial) do
-    f_serial = serial
-               |> convert_char_number
-               |> is_float
-               |> case do
-                    false -> List.to_integer(serial)
-                    true  -> serial
-                             |> List.to_float()
-                             |> Float.floor
-                             |> round
-                  end
+    f_serial =
+      serial
+      |> convert_char_number
+      |> is_float
+      |> case do
+        false ->
+          List.to_integer(serial)
+
+        true ->
+          serial
+          |> List.to_float()
+          |> Float.floor()
+          |> round
+      end
 
     # Convert to gregorian days and get date from that
-    gregorian = f_serial - 2 +               # adjust two days for first and last day since base year
-                date_to_days({1900, 1, 1})   # Add days in base year 1900
+    # adjust two days for first and last day since base year
+    # Add days in base year 1900
+    gregorian =
+      f_serial - 2 +
+        date_to_days({1900, 1, 1})
 
     gregorian
     |> days_to_date
@@ -50,11 +57,14 @@ defmodule Xlsxir.ConvertDate do
     str
     |> String.match?(~r/[.eE]/)
     |> case do
-         false -> List.to_integer(number)
-         true  -> case Float.parse(str) do
-                    {f, _} -> f
-                        _  -> raise "Invalid Float"
-                  end
-       end
+      false ->
+        List.to_integer(number)
+
+      true ->
+        case Float.parse(str) do
+          {f, _} -> f
+          _ -> raise "Invalid Float"
+        end
+    end
   end
 end

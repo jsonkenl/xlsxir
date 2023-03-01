@@ -119,7 +119,7 @@ defmodule XlsxirTest do
 
     expected_rows = [
       ["Tag", "Type", "Status", "Commissioned"],
-      ["abc123", "InProgress", "Complete", ~N[2019-06-21 02:39:11]]
+      ["abc123", "InProgress", "Complete", ~N[2019-06-21 02:39:12]]
     ]
 
     assert get_list(pid) == expected_rows

@@ -4,15 +4,18 @@ defmodule XmlFileTest do
   def no_shared_path(), do: "./test/test_data/noShared.xlsx"
 
   test "open memory XmlFile" do
-    assert {:ok, _file_pid} = Xlsxir.XmlFile.open(%Xlsxir.XmlFile{content: File.read!("./test/test_data/test/xl/styles.xml")})
+    assert {:ok, _file_pid} =
+             Xlsxir.XmlFile.open(%Xlsxir.XmlFile{
+               content: File.read!("./test/test_data/test/xl/styles.xml")
+             })
   end
 
   test "open filepath XmlFile" do
-    assert {:ok, _file_pid} = Xlsxir.XmlFile.open(%Xlsxir.XmlFile{path: "./test/test_data/test/xl/styles.xml"})
+    assert {:ok, _file_pid} =
+             Xlsxir.XmlFile.open(%Xlsxir.XmlFile{path: "./test/test_data/test/xl/styles.xml"})
   end
 
   test "parses xlsx without sharedStings and styles" do
-
     # here is a spec which sayeth there shalt always be shared strings:
     #
     #  https://msdn.microsoft.com/en-us/library/office/gg278314.aspx
@@ -26,7 +29,6 @@ defmodule XmlFileTest do
 
     s = Xlsxir.stream_list(no_shared_path(), 0)
     assert %Stream{} = s
-    assert 3 == s |> Enum.map(&(&1)) |> length
+    assert 3 == s |> Enum.map(& &1) |> length
   end
-
 end

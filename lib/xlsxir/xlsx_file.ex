@@ -115,7 +115,7 @@ defmodule Xlsxir.XlsxFile do
 
   defp fill_empty_cells_at_end(tid, end_column, index) when is_integer(index) do
     build_and_replace(tid, end_column, index)
-    nex_index= :ets.next(tid, index)
+    nex_index = :ets.next(tid, index)
     fill_empty_cells_at_end(tid, end_column, nex_index)
   end
 
@@ -133,7 +133,7 @@ defmodule Xlsxir.XlsxFile do
     empty_cells = Xlsxir.ParseWorksheet.fill_empty_cells(from, to, index, [])
     new_cells = cells ++ empty_cells
 
-    true = :ets.insert(tid, {index,  new_cells})
+    true = :ets.insert(tid, {index, new_cells})
   end
 
   @doc """

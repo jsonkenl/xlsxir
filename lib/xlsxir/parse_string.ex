@@ -22,22 +22,27 @@ defmodule Xlsxir.ParseString do
     %__MODULE__{tid: GenServer.call(Xlsxir.StateManager, :new_table)}
   end
 
-  def sax_event_handler({:startElement,_,'si',_,_}, %__MODULE__{tid: tid, index: index}), do: %__MODULE__{tid: tid, index: index}
+  def sax_event_handler({:startElement, _, 'si', _, _}, %__MODULE__{tid: tid, index: index}),
+    do: %__MODULE__{tid: tid, index: index}
 
-  def sax_event_handler({:startElement,_,'family',_,_}, state) do
+  def sax_event_handler({:startElement, _, 'family', _, _}, state) do
     %{state | family: true}
   end
 
-  def sax_event_handler({:characters, value},
-    %__MODULE__{family_string: fam_str} = state) do
-      value = value |> to_string
-      %{state | family_string: fam_str <> value}
+  def sax_event_handler(
+        {:characters, value},
+        %__MODULE__{family_string: fam_str} = state
+      ) do
+    value = value |> to_string
+    %{state | family_string: fam_str <> value}
   end
 
-  def sax_event_handler({:endElement,_,'si',_},
-    %__MODULE__{family_string: fam_str, tid: tid, index: index} = state) do
-      :ets.insert(tid, {index, fam_str})
-      %{state | index: index + 1}
+  def sax_event_handler(
+        {:endElement, _, 'si', _},
+        %__MODULE__{family_string: fam_str, tid: tid, index: index} = state
+      ) do
+    :ets.insert(tid, {index, fam_str})
+    %{state | index: index + 1}
   end
 
   def sax_event_handler(_, state), do: state

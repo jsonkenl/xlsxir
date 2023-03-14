@@ -7,7 +7,7 @@ defmodule Xlsxir.Mixfile do
      version: "1.6.4",
      name: "Xlsxir",
      source_url: "https://github.com/jsonkenl/xlsxir",
-     elixir: "~> 1.4",
+     elixir: "~> 1.9",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: description(),
@@ -26,8 +26,7 @@ defmodule Xlsxir.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      #{:earmark, github: "pragdave/earmark", override: true, only: :dev},
+      {:ex_doc, "~> 0.29", only: :dev, runtime: false},
       {:erlsom, "~> 1.5"}
     ]
   end

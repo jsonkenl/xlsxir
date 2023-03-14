@@ -14,7 +14,7 @@ defmodule SaxParserTest do
 
   defp find_string(tid, index) do
     :ets.lookup(tid, index)
-    |> List.first
+    |> List.first()
     |> elem(1)
   end
 end

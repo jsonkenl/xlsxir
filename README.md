@@ -28,8 +28,8 @@ end
 Then start an OTP application:
 
 ```elixir
-defp application do
-  [applications: [:xlsxir]]
+def application do
+  [extra_applications: [:xlsxir]]
 end
 ```
 
@@ -40,7 +40,7 @@ end
 Xlsxir parses a `.xlsx` file located at a given `path` and extracts the data to an ETS process via the `Xlsxir.multi_extract/1-5`, `Xlsxir.peek/3-4` and `Xlsxir.stream_list/2-3` functions:
 
 ```elixir
-Xlsxir.multi_extract(path, index \\ nil, timer \\ false, excel \\ nil, options \\ [])
+Xlsxir.multi_extract(path, index \\ nil, timer \\ false, rows \\ nil, options \\ [])
 Xlsxir.peek(path, index, rows, options \\ [])
 Xlsxir.stream_list(path, index, options \\ [])
 ```

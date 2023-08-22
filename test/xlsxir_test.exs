@@ -157,4 +157,29 @@ defmodule XlsxirTest do
     assert map["B2"] == "pre 2008"
     assert map["B3"] == "https://msdn.microsoft.com/en-us/library/office/gg278314.aspx"
   end
+
+  test "swapped order of sheets still correctly identifies sheet names" do
+    # The order of <sheet> tags in the workbook.xml will match the "sheet(index+1).xml" file names
+    # of the worksheets. (see also %Xlsxir.XmlFile{name: "sheet#.xml"}
+    # Previously the framework relied on the rid or sheetId values to identify the order
+    # sheetId especially is unreliable for this because its numbers are created like a
+    # sequential id in a database and moving sheets or deleting sheets can lead to gaps
+    # and non-sequential values.
+    [{:ok, pid_sheet_2}, {:ok, pid_sheet_1}] =
+      multi_extract("./test/test_data/swapped-sheet-order.xlsx")
+
+    on_exit(fn ->
+      close(pid_sheet_1)
+      close(pid_sheet_2)
+    end)
+
+    map_sheet_2 = get_map(pid_sheet_2)
+    map_sheet_1 = get_map(pid_sheet_1)
+
+    assert map_sheet_2["A1"] == "SHEET2CELL"
+    assert map_sheet_1["A1"] == "SHEET1CELL"
+
+    assert get_info(pid_sheet_2, :name) == "Sheet2"
+    assert get_info(pid_sheet_1, :name) == "Sheet1"
+  end
 end

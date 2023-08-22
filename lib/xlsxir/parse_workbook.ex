@@ -4,44 +4,23 @@ defmodule Xlsxir.ParseWorkbook do
   """
 
   @doc """
-  sheets has multiple sheet map which consists of name, sheet_id and rid
+  Sheet tags come in the order they appear in the spreadsheet.
   """
-  defstruct sheets: [], tid: nil
+  defstruct sheet_number: 1, tid: nil
 
   def sax_event_handler(:startDocument, _state) do
     %__MODULE__{tid: GenServer.call(Xlsxir.StateManager, :new_table)}
   end
 
   def sax_event_handler({:startElement, _, 'sheet', _, xml_attrs}, state) do
-    sheet =
-      Enum.reduce(xml_attrs, %{name: nil, sheet_id: nil, rid: nil}, fn attr, sheet ->
-        case attr do
-          {:attribute, 'name', _, _, name} ->
-            %{sheet | name: name |> to_string}
-
-          {:attribute, 'sheetId', _, _, sheet_id} ->
-            {sheet_id, _} = sheet_id |> to_string |> Integer.parse()
-            %{sheet | sheet_id: sheet_id}
-
-          {:attribute, 'id', _, _, rid} ->
-            "rId" <> rid = rid |> to_string
-            {rid, _} = Integer.parse(rid)
-            %{sheet | rid: rid}
-
-          _ ->
-            sheet
-        end
+    sheet_name =
+      Enum.find_value(xml_attrs, fn
+        {:attribute, 'name', _, _, name} -> to_string(name)
+        _ -> nil
       end)
 
-    %__MODULE__{state | sheets: [sheet | state.sheets]}
-  end
-
-  def sax_event_handler(:endDocument, %__MODULE__{tid: tid} = state) do
-    Enum.map(state.sheets, fn %{sheet_id: sheet_id, name: name} ->
-      :ets.insert(tid, {sheet_id, name})
-    end)
-
-    state
+    :ets.insert(state.tid, {state.sheet_number, sheet_name})
+    %__MODULE__{state | sheet_number: state.sheet_number + 1}
   end
 
   def sax_event_handler(_, state), do: state

@@ -12,18 +12,18 @@ defmodule Xlsxir.ParseWorkbook do
     %__MODULE__{tid: GenServer.call(Xlsxir.StateManager, :new_table)}
   end
 
-  def sax_event_handler({:startElement, _, 'sheet', _, xml_attrs}, state) do
+  def sax_event_handler({:startElement, _, ~c"sheet", _, xml_attrs}, state) do
     sheet =
       Enum.reduce(xml_attrs, %{name: nil, sheet_id: nil, rid: nil}, fn attr, sheet ->
         case attr do
-          {:attribute, 'name', _, _, name} ->
+          {:attribute, ~c"name", _, _, name} ->
             %{sheet | name: name |> to_string}
 
-          {:attribute, 'sheetId', _, _, sheet_id} ->
+          {:attribute, ~c"sheetId", _, _, sheet_id} ->
             {sheet_id, _} = sheet_id |> to_string |> Integer.parse()
             %{sheet | sheet_id: sheet_id}
 
-          {:attribute, 'id', _, _, rid} ->
+          {:attribute, ~c"id", _, _, rid} ->
             "rId" <> rid = rid |> to_string
             {rid, _} = Integer.parse(rid)
             %{sheet | rid: rid}
@@ -37,8 +37,8 @@ defmodule Xlsxir.ParseWorkbook do
   end
 
   def sax_event_handler(:endDocument, %__MODULE__{tid: tid} = state) do
-    Enum.map(state.sheets, fn %{sheet_id: sheet_id, name: name} ->
-      :ets.insert(tid, {sheet_id, name})
+    Enum.map(state.sheets, fn %{rid: rid, name: name} ->
+      :ets.insert(tid, {rid, name})
     end)
 
     state

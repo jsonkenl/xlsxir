@@ -91,8 +91,8 @@ defmodule XlsxirTest do
       |> Keyword.values()
       |> Enum.map(fn ets_id -> get_multi_info(ets_id, :name) end)
 
-    assert Enum.all?(sheet_names, &String.starts_with?(&1, "List"))
     refute Enum.any?(sheet_names, &(&1 == nil))
+    assert Enum.all?(sheet_names, &String.starts_with?(&1, "List"))
   end
 
   def error_cell_path(), do: "./test/test_data/error-date.xlsx"

@@ -81,6 +81,20 @@ defmodule XlsxirTest do
     assert [["string one", "string two", 10, 20, {2016, 1, 1}]] == get_list(tid)
   end
 
+  test "able to parse sheet names correctly" do
+    res = multi_extract("./test/test_data/sheet_names.xlsx")
+    assert length(res) == 10
+    assert res |> Keyword.keys() |> Enum.all?(&(&1 == :ok))
+
+    sheet_names =
+      res
+      |> Keyword.values()
+      |> Enum.map(fn ets_id -> get_multi_info(ets_id, :name) end)
+
+    assert Enum.all?(sheet_names, &String.starts_with?(&1, "List"))
+    refute Enum.any?(sheet_names, &(&1 == nil))
+  end
+
   def error_cell_path(), do: "./test/test_data/error-date.xlsx"
 
   test "error cells can be parsed properly1" do

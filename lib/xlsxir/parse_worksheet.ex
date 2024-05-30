@@ -137,7 +137,7 @@ defmodule Xlsxir.ParseWorksheet do
 
   def sax_event_handler(_, state, _, _), do: state
 
-  defp fill_nil(rows) do
+  def fill_nil(rows) do
     Enum.reduce(rows, {[], nil}, fn [ref, val], {values, previous} ->
       line = ~r/\d+$/ |> Regex.run(ref) |> List.first()
 

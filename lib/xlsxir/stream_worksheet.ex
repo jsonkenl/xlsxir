@@ -36,7 +36,7 @@ defmodule Xlsxir.StreamWorksheet do
 
   def sax_event_handler({:endElement, _, 'row', _}, state, _excel) do
     unless Enum.empty?(state.row) do
-      value = state.row |> Enum.reverse()
+      value = state.row |> Enum.reverse() |> ParseWorksheet.fill_nil()
 
       # Wait for parent process to ask for the next row
       receive do

@@ -19,6 +19,16 @@ defmodule StreamTest do
     # second run will hang on missing fs resources (before fix) and hang (default 60s)
     assert {:ok, _} = Task.yield( Task.async( fn() -> s |> Stream.run() end ), 2000)
     # third run because reasons
-    assert {:ok, _} = Task.yield( Task.async( fn() -> s |> Stream.run() end ), 2000)
+  end
+
+  test "empty cells are filled with nil" do
+    s = stream_list(path(), 9)
+
+    assert s |> Enum.map(& &1) == [
+             [1, nil, 1, nil, 1, nil, nil, 1],
+             [nil, 1, nil, nil, 1, nil, 1],
+             [nil, nil, nil, nil, nil, 1, nil, nil, nil, 1],
+             [1, 1, nil, 1]
+           ]
   end
 end

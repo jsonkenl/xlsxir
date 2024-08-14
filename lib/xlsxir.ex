@@ -4,7 +4,6 @@ defmodule Xlsxir do
   use Application
 
   def start(_type, _args) do
-
     children = [
       %{id: Xlsxir.StateManager, start: {Xlsxir.StateManager, :start_link, []}, type: :worker}
     ]

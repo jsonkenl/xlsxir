@@ -55,7 +55,7 @@ defmodule Xlsxir.ParseWorksheet do
   end
 
   def sax_event_handler(
-        {:startElement, _, 'row', _, _},
+        {:startElement, _, ~c"row", _, _},
         %__MODULE__{tid: tid, max_rows: max_rows},
         _excel,
         _
@@ -63,11 +63,11 @@ defmodule Xlsxir.ParseWorksheet do
     %__MODULE__{tid: tid, max_rows: max_rows}
   end
 
-  def sax_event_handler({:startElement, _, 'c', _, xml_attr}, state, %{styles: styles_tid}, _) do
+  def sax_event_handler({:startElement, _, ~c"c", _, xml_attr}, state, %{styles: styles_tid}, _) do
     a =
       Enum.reduce(xml_attr, %{}, fn attr, acc ->
         case attr do
-          {:attribute, 's', _, _, style} ->
+          {:attribute, ~c"s", _, _, style} ->
             Map.put(acc, "s", find_styles(styles_tid, List.to_integer(style)))
 
           {:attribute, key, _, _, ref} ->
@@ -80,19 +80,20 @@ defmodule Xlsxir.ParseWorksheet do
     %{state | cell_ref: cell_ref, num_style: num_style, data_type: data_type}
   end
 
-  def sax_event_handler({:startElement, _, 'f', _, _}, state, _, _) do
+  def sax_event_handler({:startElement, _, ~c"f", _, _}, state, _, _) do
     %{state | value_type: :formula}
   end
 
-  def sax_event_handler({:startElement, _, el, _, _}, state, _, _) when el in ['v', 't'] do
+  def sax_event_handler({:startElement, _, el, _, _}, state, _, _) when el in [~c"v", ~c"t"] do
     %{state | value_type: :value}
   end
 
-  def sax_event_handler({:endElement, _, el, _, _}, state, _, _) when el in ['f', 'v', 't'] do
+  def sax_event_handler({:endElement, _, el, _, _}, state, _, _)
+      when el in [~c"f", ~c"v", ~c"t"] do
     %{state | value_type: nil}
   end
 
-  def sax_event_handler({:startElement, _, 'is', _, _}, state, _, _),
+  def sax_event_handler({:startElement, _, ~c"is", _, _}, state, _, _),
     do: %{state | value_type: :value}
 
   def sax_event_handler({:characters, value}, state, _, _) do
@@ -103,7 +104,7 @@ defmodule Xlsxir.ParseWorksheet do
     end
   end
 
-  def sax_event_handler({:endElement, _, 'c', _}, %__MODULE__{row: row} = state, excel, _) do
+  def sax_event_handler({:endElement, _, ~c"c", _}, %__MODULE__{row: row} = state, excel, _) do
     cell_value = format_cell_value(excel, [state.data_type, state.num_style, state.value])
     new_cell = [to_string(state.cell_ref), cell_value]
 
@@ -118,7 +119,7 @@ defmodule Xlsxir.ParseWorksheet do
   end
 
   def sax_event_handler(
-        {:endElement, _, 'row', _},
+        {:endElement, _, ~c"row", _},
         %__MODULE__{tid: tid, max_rows: max_rows} = state,
         _excel,
         _
@@ -180,7 +181,7 @@ defmodule Xlsxir.ParseWorksheet do
         acc + char - 65 + 1
       end)
 
-    "#{column_from_index(col_index + 1, '')}#{line}"
+    "#{column_from_index(col_index + 1, ~c"")}#{line}"
   end
 
   def fill_empty_cells(from, from, _line, cells), do: Enum.reverse(cells)
@@ -202,22 +203,22 @@ defmodule Xlsxir.ParseWorksheet do
       # Empty cell with assigned attribute
       [_, _, ""] -> nil
       # Type error
-      ['e', _, e] -> List.to_string(e)
+      [~c"e", _, e] -> List.to_string(e)
       # Type string
-      ['s', _, i] -> find_string(strings_tid, List.to_integer(i))
+      [~c"s", _, i] -> find_string(strings_tid, List.to_integer(i))
       # Type number
       [nil, nil, n] -> convert_char_number(n)
-      ['n', nil, n] -> convert_char_number(n)
+      [~c"n", nil, n] -> convert_char_number(n)
       # ISO 8601 type date
-      [nil, 'd', d] -> convert_date_or_time(d)
-      ['n', 'd', d] -> convert_date_or_time(d)
-      ['d', 'd', d] -> convert_iso_date(d)
+      [nil, ~c"d", d] -> convert_date_or_time(d)
+      [~c"n", ~c"d", d] -> convert_date_or_time(d)
+      [~c"d", ~c"d", d] -> convert_iso_date(d)
       # Type formula w/ string
-      ['str', _, s] -> List.to_string(s)
+      [~c"str", _, s] -> List.to_string(s)
       # Type boolean
-      ['b', _, s] -> s == '1'
+      [~c"b", _, s] -> s == ~c"1"
       # Type string
-      ['inlineStr', _, s] -> List.to_string(s)
+      [~c"inlineStr", _, s] -> List.to_string(s)
       # Unmapped type
       _ -> raise "Unmapped attribute #{Enum.at(list, 0)}. Unable to process"
     end

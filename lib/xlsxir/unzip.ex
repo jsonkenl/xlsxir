@@ -20,11 +20,11 @@ defmodule Xlsxir.Unzip do
 
          iex> path = "./test/test_data/test.xlsx"
          iex> Xlsxir.Unzip.validate_path_and_index(path, 0)
-         {:ok, './test/test_data/test.xlsx'}
+         {:ok, ~c'./test/test_data/test.xlsx'}
 
          iex> path = "./test/test_data/test.validfilebutnotxlsx"
          iex> Xlsxir.Unzip.validate_path_and_index(path, 0)
-         {:ok, './test/test_data/test.validfilebutnotxlsx'}
+         {:ok, ~c'./test/test_data/test.validfilebutnotxlsx'}
 
          iex> path = "./test/test_data/test.xlsx"
          iex> Xlsxir.Unzip.validate_path_and_index(path, 100)
@@ -140,7 +140,7 @@ defmodule Xlsxir.Unzip do
   An example file named `test.zip` located in './test_data/test' containing a single file named `test.txt`:
 
       iex> path = "./test/test_data/test.zip"
-      iex> file_list = ['test.txt']
+      iex> file_list = [~c'test.txt']
       iex> Xlsxir.Unzip.extract_xml(file_list, path, :memory)
       {:ok, [%Xlsxir.XmlFile{content: "test_successful", name: "test.txt", path: nil}]}
       iex> Xlsxir.Unzip.extract_xml(file_list, path, {:file, "temp/"})

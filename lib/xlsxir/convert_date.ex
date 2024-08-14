@@ -14,7 +14,7 @@ defmodule Xlsxir.ConvertDate do
 
   ## Example
 
-      iex> Xlsxir.ConvertDate.from_serial('27514')
+      iex> Xlsxir.ConvertDate.from_serial(~c'27514')
       {1975, 4, 30}
   """
   def from_serial(serial) do

@@ -14,18 +14,20 @@ defmodule Xlsxir.ConvertDateTime do
 
   ## Example
 
-      iex> Xlsxir.ConvertDateTime.from_charlist('41261.6013888889')
+      iex> Xlsxir.ConvertDateTime.from_charlist(~c'41261.6013888889')
       ~N[2012-12-18 14:26:00]
   """
-  def from_charlist('0'), do: {0, 0, 0}
+  def from_charlist(~c"0"), do: {0, 0, 0}
+
   def from_charlist(charlist) do
     charlist
-    |> List.to_float
+    |> List.to_float()
     |> from_float
   end
 
   def from_float(n) when is_float(n) do
-    n = if n > 59, do: n - 1, else: n # Lotus bug
+    # Lotus bug
+    n = if n > 59, do: n - 1, else: n
     convert_from_serial(n)
   end
 
@@ -36,6 +38,7 @@ defmodule Xlsxir.ConvertDateTime do
 
     {hours, minutes, seconds}
   end
+
   defp convert_from_serial(n) when is_float(n) do
     {whole_days, fractional_day} = split_float(n)
     {hours, minutes, seconds} = convert_from_serial(fractional_day)
@@ -48,9 +51,11 @@ defmodule Xlsxir.ConvertDateTime do
   end
 
   defp split_float(f) do
-    whole = f
-      |> Float.floor
+    whole =
+      f
+      |> Float.floor()
       |> round
+
     {whole, f - whole}
   end
 end

@@ -115,7 +115,7 @@ defmodule Xlsxir.XlsxFile do
 
   defp fill_empty_cells_at_end(tid, end_column, index) when is_integer(index) do
     build_and_replace(tid, end_column, index)
-    nex_index= :ets.next(tid, index)
+    nex_index = :ets.next(tid, index)
     fill_empty_cells_at_end(tid, end_column, nex_index)
   end
 
@@ -133,7 +133,7 @@ defmodule Xlsxir.XlsxFile do
     empty_cells = Xlsxir.ParseWorksheet.fill_empty_cells(from, to, index, [])
     new_cells = cells ++ empty_cells
 
-    true = :ets.insert(tid, {index,  new_cells})
+    true = :ets.insert(tid, {index, new_cells})
   end
 
   @doc """
@@ -256,8 +256,8 @@ defmodule Xlsxir.XlsxFile do
 
   defp zip_paths_list(worksheet_indexes) do
     worksheet_indexes
-    |> Enum.map(fn worksheet_index -> 'xl/worksheets/sheet#{worksheet_index + 1}.xml' end)
-    |> Enum.concat(['xl/styles.xml', 'xl/sharedStrings.xml', 'xl/workbook.xml'])
+    |> Enum.map(fn worksheet_index -> ~c"xl/worksheets/sheet#{worksheet_index + 1}.xml" end)
+    |> Enum.concat([~c"xl/styles.xml", ~c"xl/sharedStrings.xml", ~c"xl/workbook.xml"])
   end
 
   defp parse_styles_to_ets(%__MODULE__{styles_xml_file: nil} = xlsx_file), do: xlsx_file

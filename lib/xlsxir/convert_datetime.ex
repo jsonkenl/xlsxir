@@ -17,7 +17,7 @@ defmodule Xlsxir.ConvertDateTime do
       iex> Xlsxir.ConvertDateTime.from_charlist('41261.6013888889')
       ~N[2012-12-18 14:26:00]
   """
-  def from_charlist('0'), do: {0, 0, 0}
+  def from_charlist(~c'0'), do: {0, 0, 0}
   def from_charlist(charlist) do
     charlist
     |> List.to_float

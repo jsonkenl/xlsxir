@@ -39,7 +39,12 @@ defmodule Xlsxir.ConvertDate do
 
   defp date_to_days(date), do: :calendar.date_to_gregorian_days(date)
 
-  defp days_to_date(days), do: :calendar.gregorian_days_to_date(days)
+  defp days_to_date(days) do
+    case Application.get_env(:xlsxir, :date_system, :elixir) do
+      :elixir -> :calendar.gregorian_days_to_date(days) |> Date.from_erl!()
+      :erlang -> :calendar.gregorian_days_to_date(days)
+    end
+  end
 
   @doc """
   Converts extracted number in `char_list` format to either `integer` or `float`.

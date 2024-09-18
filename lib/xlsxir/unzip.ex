@@ -151,7 +151,7 @@ defmodule Xlsxir.Unzip do
   end
 
   defp extract_from_zip(path, file_list, :memory), do: :zip.extract(path, [{:file_list, file_list}, :memory])
-  defp extract_from_zip(path, file_list, {:file, dest_path}), do: :zip.extract(path, [{:file_list, file_list}, {:cwd, dest_path}])
+  defp extract_from_zip(path, file_list, {:file, dest_path}), do: :zip.extract(path, [{:file_list, file_list}, {:cwd, to_charlist(dest_path)}])
 
   defp build_xml_files(files_list) do
     files_list

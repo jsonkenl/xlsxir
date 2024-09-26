@@ -3,17 +3,17 @@ defmodule Xlsxir.Mixfile do
 
   def project do
     [
-     app: :xlsxir,
-     version: "1.6.4",
-     name: "Xlsxir",
-     source_url: "https://github.com/jsonkenl/xlsxir",
-     elixir: "~> 1.9",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     description: description(),
-     package: package(),
-     deps: deps(),
-     docs: [main: "overview", extras: ["CHANGELOG.md", "NUMBER_STYLES.md", "OVERVIEW.md"]]
+      app: :xlsxir,
+      version: "1.6.4",
+      name: "Xlsxir",
+      source_url: "https://github.com/jsonkenl/xlsxir",
+      elixir: "~> 1.9",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      description: description(),
+      package: package(),
+      deps: deps(),
+      docs: [main: "overview", extras: ["CHANGELOG.md", "NUMBER_STYLES.md", "OVERVIEW.md"]]
     ]
   end
 
@@ -42,10 +42,9 @@ defmodule Xlsxir.Mixfile do
       maintainers: ["Jason Kennell"],
       licenses: ["MIT License"],
       links: %{
-                "Github" => "https://github.com/jsonkenl/xlsxir",
-                "Change Log" => "https://hexdocs.pm/xlsxir/changelog.html"
-               }
+        "Github" => "https://github.com/jsonkenl/xlsxir",
+        "Change Log" => "https://hexdocs.pm/xlsxir/changelog.html"
+      }
     ]
   end
-
 end

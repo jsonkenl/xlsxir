@@ -5,7 +5,7 @@ defmodule Xlsxir.XmlFile do
   (located in the `path` field)
   """
 
-  defstruct [name: nil, path: nil, content: nil]
+  defstruct name: nil, path: nil, content: nil
 
   @doc """
   Open an XmlFile

@@ -10,14 +10,28 @@ jobs:
   test:
     name: Elixir Tests
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
     env:
       MIX_ENV: test
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - otp: "26.2.5.3"
+            elixir: "1.17.3"
+            experimental: false
+          - otp: "27.0.1"
+            elixir: "1.17.3"
+            experimental: true
+          - otp: "27.1"
+            elixir: "1.17.3"
+            experimental: true
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "27.1"
-          elixir-version: "1.17.3"
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
       - uses: actions/cache@v4
         id: cache
         with:

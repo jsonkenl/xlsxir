@@ -23,11 +23,11 @@ jobs:
           - os: "ubuntu-latest"
             otp: "27.0.1"
             elixir: "1.17.3"
-            experimental: true
+            experimental: false
           - os: "ubuntu-latest"
-            otp: "27.1"
+            otp: "27.1.1"
             elixir: "1.17.3"
-            experimental: true
+            experimental: false
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4

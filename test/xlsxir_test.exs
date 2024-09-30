@@ -6,6 +6,7 @@ defmodule XlsxirTest do
   def path(), do: "./test/test_data/test.xlsx"
   def rb_path(), do: "./test/test_data/red_black.xlsx"
   def missing_styles_path(), do: "./test/test_data/missing_styles.xlsx"
+  def apple_numbers_path(), do: "./test/test_data/test_apple_numbers.xlsx"
 
   test "second worksheet is parsed with index argument of 1" do
     {:ok, pid} = extract(path(), 1)
@@ -71,6 +72,11 @@ defmodule XlsxirTest do
     {:ok, pid} = extract(rb_path(), 0)
     assert get_cell(pid, "A1") == "RED: BLACK"
     assert get_cell(pid, "A2") == "Data"
+    close(pid)
+  end
+
+  test "able to parse Apple Numbers Excel export" do
+    {:ok, pid} = extract(apple_numbers_path(), 0)
     close(pid)
   end
 

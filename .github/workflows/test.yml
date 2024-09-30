@@ -1,0 +1,56 @@
+name: Pull Request Workflow
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Elixir Tests
+    continue-on-error: ${{ matrix.experimental }}
+    env:
+      MIX_ENV: test
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: "ubuntu-latest"
+            otp: "26.2.5.3"
+            elixir: "1.17.3"
+            experimental: false
+          - os: "ubuntu-latest"
+            otp: "27.0.1"
+            elixir: "1.17.3"
+            experimental: false
+          - os: "ubuntu-latest"
+            otp: "27.1.1"
+            elixir: "1.17.3"
+            experimental: false
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-${{ steps.beam.outputs.otp-version }}--mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-${{ steps.beam.outputs.otp-version }}--mix-
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: mix deps.get
+      - name: Compile
+        run: mix compile --warnings-as-errors
+      - name: Check code formatting
+        run: mix format --check-formatted
+      - name: Run Elixir tests
+        run: mix test
+  

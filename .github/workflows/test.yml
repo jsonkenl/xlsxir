@@ -28,14 +28,6 @@ jobs:
             otp: "27.1"
             elixir: "1.17.3"
             experimental: true
-          - os: "macos-latest"
-            otp: "27.1"
-            elixir: "1.17.3"
-            experimental: true
-          - os: "macos-latest"
-            otp: "26.2.5.3"
-            elixir: "1.17.3"
-            experimental: false
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4

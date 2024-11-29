@@ -143,7 +143,7 @@ defmodule Xlsxir.ParseWorksheet do
 
       empty_cells =
         cond do
-          is_nil(previous) && String.first(ref) != "A" ->
+          is_nil(previous) && !Regex.match?(~r/^A\d/, ref) ->
             fill_empty_cells("A#{line}", ref, line, [])
 
           !is_nil(previous) && !is_next_col(ref, previous) ->

@@ -4,6 +4,7 @@
 [![Hex.pm Version](http://img.shields.io/hexpm/v/xlsxir.svg)](https://hex.pm/packages/xlsxir)
 [![Hex docs](http://img.shields.io/badge/hex.pm-docs-blue.svg?style=flat)](https://hexdocs.pm/xlsxir)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kennellroxco/xlsxir/master/LICENSE)
+[![libs.tech recommends](https://libs.tech/project/53290944/badge.svg)](https://libs.tech/project/53290944/xlsxir)
 
 Xlsxir is an Elixir library that parses `.xlsx` files using Simple API for XML (SAX) parsing via the [Erlsom](https://github.com/willemdj/erlsom) Erlang library, extracts the data to an Erlang Term Storage (ETS) process and provides various functions for accessing the data. Please submit any issues found and they will be addressed ASAP.
 

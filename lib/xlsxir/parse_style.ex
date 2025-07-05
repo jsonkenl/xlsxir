@@ -54,23 +54,23 @@ defmodule Xlsxir.ParseStyle do
     %__MODULE__{tid: GenServer.call(Xlsxir.StateManager, :new_table)}
   end
 
-  def sax_event_handler({:startElement, _, 'cellXfs', _, _}, state) do
+  def sax_event_handler({:startElement, _, ~c"cellXfs", _, _}, state) do
     %{state | cellxfs: true}
   end
 
-  def sax_event_handler({:endElement, _, 'cellXfs', _}, state) do
+  def sax_event_handler({:endElement, _, ~c"cellXfs", _}, state) do
     %{state | cellxfs: false}
   end
 
   def sax_event_handler(
-        {:startElement, _, 'xf', _, xml_attr},
+        {:startElement, _, ~c"xf", _, xml_attr},
         %__MODULE__{num_fmt_ids: num_fmt_ids} = state
       ) do
     if state.cellxfs do
       xml_attr
       |> Enum.filter(fn attr ->
         case attr do
-          {:attribute, 'numFmtId', _, _, _} -> true
+          {:attribute, ~c"numFmtId", _, _, _} -> true
           _ -> false
         end
       end)
@@ -79,7 +79,7 @@ defmodule Xlsxir.ParseStyle do
           %{state | num_fmt_ids: num_fmt_ids ++ [id]}
 
         _ ->
-          %{state | num_fmt_ids: num_fmt_ids ++ ['0']}
+          %{state | num_fmt_ids: num_fmt_ids ++ [~c"0"]}
       end
     else
       state
@@ -87,14 +87,14 @@ defmodule Xlsxir.ParseStyle do
   end
 
   def sax_event_handler(
-        {:startElement, _, 'numFmt', _, xml_attr},
+        {:startElement, _, ~c"numFmt", _, xml_attr},
         %__MODULE__{custom_style: custom_style} = state
       ) do
     temp =
       Enum.reduce(xml_attr, %{}, fn attr, acc ->
         case attr do
-          {:attribute, 'numFmtId', _, _, id} -> Map.put(acc, :id, id)
-          {:attribute, 'formatCode', _, _, cd} -> Map.put(acc, :cd, cd)
+          {:attribute, ~c"numFmtId", _, _, id} -> Map.put(acc, :id, id)
+          {:attribute, ~c"formatCode", _, _, cd} -> Map.put(acc, :cd, cd)
           _ -> nil
         end
       end)
@@ -112,7 +112,7 @@ defmodule Xlsxir.ParseStyle do
       Enum.reduce(num_fmt_ids, 0, fn style_type, acc ->
         case List.to_integer(style_type) do
           i when i in @num -> :ets.insert(tid, {index + acc, nil})
-          i when i in @date -> :ets.insert(tid, {index + acc, 'd'})
+          i when i in @date -> :ets.insert(tid, {index + acc, ~c"d"})
           _ -> add_custom_style(tid, style_type, custom_type, index + acc)
         end
 
@@ -129,7 +129,7 @@ defmodule Xlsxir.ParseStyle do
     |> Enum.reduce(%{}, fn {k, v}, acc ->
       cond do
         String.match?(to_string(v), ~r/\bred\b/i) -> Map.put_new(acc, k, nil)
-        String.match?(to_string(v), ~r/[dhmsy]/i) -> Map.put_new(acc, k, 'd')
+        String.match?(to_string(v), ~r/[dhmsy]/i) -> Map.put_new(acc, k, ~c"d")
         true -> Map.put_new(acc, k, nil)
       end
     end)

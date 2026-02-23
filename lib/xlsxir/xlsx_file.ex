@@ -196,7 +196,8 @@ defmodule Xlsxir.XlsxFile do
       "temp"
   end
 
-  defp initialize_stream({:error, _} = error, _worksheet_index), do: error
+  defp initialize_stream({:error, reason}, _worksheet_index),
+    do: raise("Xlsxir initialization error: #{inspect(reason)}")
 
   defp initialize_stream(%__MODULE__{} = xlsx_file, worksheet_index) do
     {:ok, worksheet_xml_file} = get_worksheet(xlsx_file, worksheet_index)

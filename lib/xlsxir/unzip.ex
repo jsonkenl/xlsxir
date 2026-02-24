@@ -1,5 +1,4 @@
 defmodule Xlsxir.Unzip do
-
   alias Xlsxir.XmlFile
 
   @moduledoc """
@@ -21,11 +20,11 @@ defmodule Xlsxir.Unzip do
 
          iex> path = "./test/test_data/test.xlsx"
          iex> Xlsxir.Unzip.validate_path_and_index(path, 0)
-         {:ok, './test/test_data/test.xlsx'}
+         {:ok, ~c"./test/test_data/test.xlsx"}
 
          iex> path = "./test/test_data/test.validfilebutnotxlsx"
          iex> Xlsxir.Unzip.validate_path_and_index(path, 0)
-         {:ok, './test/test_data/test.validfilebutnotxlsx'}
+         {:ok, ~c"./test/test_data/test.validfilebutnotxlsx"}
 
          iex> path = "./test/test_data/test.xlsx"
          iex> Xlsxir.Unzip.validate_path_and_index(path, 100)
@@ -39,7 +38,7 @@ defmodule Xlsxir.Unzip do
     path = String.to_charlist(path)
 
     case valid_extract_request?(path, index) do
-      :ok              -> {:ok, path}
+      :ok -> {:ok, path}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -68,47 +67,57 @@ defmodule Xlsxir.Unzip do
 
   def validate_path_all_indexes(path) do
     path = String.to_charlist(path)
+
     case :zip.list_dir(path) do
-      {:ok, file_list}  ->
-        indexes = file_list
-        |> Enum.filter(fn (file) ->
-          case file do
-            {:zip_file, filename, _, _, _, _} ->
-              filename |> to_string |> String.starts_with?("xl/worksheets/sheet")
-            _ ->
-              nil
-          end
-        end)
-        |> Enum.map(fn ({:zip_file, filename, _, _, _, _}) ->
-          index = filename
-          |> to_string
-          |> String.replace_prefix("xl/worksheets/sheet", "")
-          |> String.replace_suffix(".xml", "")
-          |> String.to_integer
-          index - 1
-        end)
-        |> Enum.sort
+      {:ok, file_list} ->
+        indexes =
+          file_list
+          |> Enum.filter(fn file ->
+            case file do
+              {:zip_file, filename, _, _, _, _} ->
+                filename |> to_string |> String.starts_with?("xl/worksheets/sheet")
+
+              _ ->
+                nil
+            end
+          end)
+          |> Enum.map(fn {:zip_file, filename, _, _, _, _} ->
+            index =
+              filename
+              |> to_string
+              |> String.replace_prefix("xl/worksheets/sheet", "")
+              |> String.replace_suffix(".xml", "")
+              |> String.to_integer()
+
+            index - 1
+          end)
+          |> Enum.sort()
+
         {:ok, indexes}
-      {:error, _reason} -> {:error, @filetype_error}
+
+      {:error, _reason} ->
+        {:error, @filetype_error}
     end
   end
 
   defp valid_extract_request?(path, index) do
     case :zip.list_dir(path) do
-      {:ok, file_list}  -> search_file_list(file_list, index)
+      {:ok, file_list} -> search_file_list(file_list, index)
       {:error, _reason} -> {:error, @filetype_error}
     end
   end
 
   defp search_file_list(file_list, index) do
-    sheet   = 'xl/worksheets/sheet#{index + 1}.xml'
-    results = file_list
-              |> Enum.map(fn file ->
-                   case file do
-                     {:zip_file, ^sheet, _, _, _, _} -> :ok
-                     _                               -> nil
-                   end
-                 end)
+    sheet = ~c"xl/worksheets/sheet#{index + 1}.xml"
+
+    results =
+      file_list
+      |> Enum.map(fn file ->
+        case file do
+          {:zip_file, ^sheet, _, _, _, _} -> :ok
+          _ -> nil
+        end
+      end)
 
     if Enum.member?(results, :ok) do
       :ok
@@ -131,7 +140,7 @@ defmodule Xlsxir.Unzip do
   An example file named `test.zip` located in './test_data/test' containing a single file named `test.txt`:
 
       iex> path = "./test/test_data/test.zip"
-      iex> file_list = ['test.txt']
+      iex> file_list = [~c"test.txt"]
       iex> Xlsxir.Unzip.extract_xml(file_list, path, :memory)
       {:ok, [%Xlsxir.XmlFile{content: "test_successful", name: "test.txt", path: nil}]}
       iex> Xlsxir.Unzip.extract_xml(file_list, path, {:file, "temp/"})
@@ -144,14 +153,19 @@ defmodule Xlsxir.Unzip do
     |> to_charlist
     |> extract_from_zip(file_list, to)
     |> case do
-        {:error, reason}  -> {:error, reason}
-        {:ok, []}         -> {:error, @xml_not_found_error}
-        {:ok, files_list} -> {:ok, build_xml_files(files_list)}
-       end
+      {:error, reason} -> {:error, reason}
+      {:ok, []} -> {:error, @xml_not_found_error}
+      {:ok, files_list} -> {:ok, build_xml_files(files_list)}
+    end
   end
 
-  defp extract_from_zip(path, file_list, :memory), do: :zip.extract(path, [{:file_list, file_list}, :memory])
-  defp extract_from_zip(path, file_list, {:file, dest_path}), do: :zip.extract(path, [{:file_list, file_list}, {:cwd, dest_path}])
+  defp extract_from_zip(path, file_list, :memory),
+    do: :zip.extract(path, [{:file_list, file_list}, :memory])
+
+  defp extract_from_zip(path, file_list, {:file, dest_path}) do
+    dest_charlist = String.to_charlist(dest_path)
+    :zip.extract(path, [{:file_list, file_list}, {:cwd, dest_charlist}])
+  end
 
   defp build_xml_files(files_list) do
     files_list
@@ -164,7 +178,8 @@ defmodule Xlsxir.Unzip do
   end
 
   # When extracting to temp file
-  defp build_xml_file(file_path) do
-    %XmlFile{name:  Path.basename(file_path), path: to_string(file_path)}
+  defp build_xml_file(file_path) when is_list(file_path) do
+    path_string = to_string(file_path)
+    %XmlFile{name: Path.basename(path_string), path: path_string}
   end
 end

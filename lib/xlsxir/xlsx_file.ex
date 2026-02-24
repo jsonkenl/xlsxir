@@ -115,7 +115,7 @@ defmodule Xlsxir.XlsxFile do
 
   defp fill_empty_cells_at_end(tid, end_column, index) when is_integer(index) do
     build_and_replace(tid, end_column, index)
-    nex_index= :ets.next(tid, index)
+    nex_index = :ets.next(tid, index)
     fill_empty_cells_at_end(tid, end_column, nex_index)
   end
 
@@ -133,7 +133,7 @@ defmodule Xlsxir.XlsxFile do
     empty_cells = Xlsxir.ParseWorksheet.fill_empty_cells(from, to, index, [])
     new_cells = cells ++ empty_cells
 
-    true = :ets.insert(tid, {index,  new_cells})
+    true = :ets.insert(tid, {index, new_cells})
   end
 
   @doc """
@@ -196,6 +196,9 @@ defmodule Xlsxir.XlsxFile do
       "temp"
   end
 
+  defp initialize_stream({:error, reason}, _worksheet_index),
+    do: raise("Xlsxir initialization error: #{inspect(reason)}")
+
   defp initialize_stream(%__MODULE__{} = xlsx_file, worksheet_index) do
     {:ok, worksheet_xml_file} = get_worksheet(xlsx_file, worksheet_index)
     sax_parser_pid = spawn(__MODULE__, :parse_worksheet_loop, [worksheet_xml_file, xlsx_file])
@@ -223,7 +226,13 @@ defmodule Xlsxir.XlsxFile do
 
   defp clean_stream({sax_parser_pid, xlsx_file}) do
     # Kill parser loop process and remove common ETS tables
-    Process.exit(sax_parser_pid, :kill)
+    try do
+      if is_pid(sax_parser_pid) and Process.alive?(sax_parser_pid) do
+        Process.exit(sax_parser_pid, :kill)
+      end
+    catch
+      _kind, _reason -> :ok
+    end
     clean(xlsx_file)
   end
 
@@ -256,8 +265,8 @@ defmodule Xlsxir.XlsxFile do
 
   defp zip_paths_list(worksheet_indexes) do
     worksheet_indexes
-    |> Enum.map(fn worksheet_index -> 'xl/worksheets/sheet#{worksheet_index + 1}.xml' end)
-    |> Enum.concat(['xl/styles.xml', 'xl/sharedStrings.xml', 'xl/workbook.xml'])
+    |> Enum.map(fn worksheet_index -> ~c"xl/worksheets/sheet#{worksheet_index + 1}.xml" end)
+    |> Enum.concat([~c"xl/styles.xml", ~c"xl/sharedStrings.xml", ~c"xl/workbook.xml"])
   end
 
   defp parse_styles_to_ets(%__MODULE__{styles_xml_file: nil} = xlsx_file), do: xlsx_file

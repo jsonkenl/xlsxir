@@ -4,7 +4,7 @@ defmodule ConvertDateTest do
 
   import Xlsxir.ConvertDate
 
-  def test_one_data(), do: ['42005', '42036', '42064', '42095', '42125', '42156', '42186', '42217', '42248', '42278', '42309', '42339']
+  def test_one_data(), do: [~c"42005", ~c"42036", ~c"42064", ~c"42095", ~c"42125", ~c"42156", ~c"42186", ~c"42217", ~c"42248", ~c"42278", ~c"42309", ~c"42339"]
 
   def test_one_results() do 
     [
@@ -27,7 +27,7 @@ defmodule ConvertDateTest do
     assert Enum.map(test_one_data(), &from_serial/1) == test_one_results()
   end
 
-  def test_two_data(), do: ['42035', '42063', '42094', '42124', '42155', '42185', '42216', '42247', '42277', '42308', '42338', '42369', '44530']
+  def test_two_data(), do: [~c"42035", ~c"42063", ~c"42094", ~c"42124", ~c"42155", ~c"42185", ~c"42216", ~c"42247", ~c"42277", ~c"42308", ~c"42338", ~c"42369", ~c"44530"]
 
   def test_two_results() do 
     [
@@ -51,7 +51,7 @@ defmodule ConvertDateTest do
     assert Enum.map(test_two_data(), &from_serial/1) == test_two_results()
   end
 
-  def test_three_data(), do: ['42019', '42050', '42078', '42109', '42139', '42170', '42200', '42231', '42262', '42292', '42323', '42353']
+  def test_three_data(), do: [~c"42019", ~c"42050", ~c"42078", ~c"42109", ~c"42139", ~c"42170", ~c"42200", ~c"42231", ~c"42262", ~c"42292", ~c"42323", ~c"42353"]
 
   def test_three_results() do 
     [
@@ -74,7 +74,7 @@ defmodule ConvertDateTest do
     assert Enum.map(test_three_data(), &from_serial/1) == test_three_results()
   end
 
-  def test_four_data(), do: ['42370', '42401', '42430', '42461', '42491', '42522', '42552', '42583', '42614', '42644', '42675', '42705']
+  def test_four_data(), do: [~c"42370", ~c"42401", ~c"42430", ~c"42461", ~c"42491", ~c"42522", ~c"42552", ~c"42583", ~c"42614", ~c"42644", ~c"42675", ~c"42705"]
 
   def test_four_results() do 
     [
@@ -97,7 +97,7 @@ defmodule ConvertDateTest do
     assert Enum.map(test_four_data(), &from_serial/1) == test_four_results()
   end
 
-  def test_five_data(), do: ['42400', '42429', '42460', '42490', '42521', '42551', '42582', '42613', '42643', '42674', '42704', '42735']
+  def test_five_data(), do: [~c"42400", ~c"42429", ~c"42460", ~c"42490", ~c"42521", ~c"42551", ~c"42582", ~c"42613", ~c"42643", ~c"42674", ~c"42704", ~c"42735"]
 
   def test_five_results() do 
     [
@@ -120,7 +120,7 @@ defmodule ConvertDateTest do
     assert Enum.map(test_five_data(), &from_serial/1) == test_five_results()
   end
 
-  def test_six_data(), do: ['42384', '42415', '42444', '42475', '42505', '42536', '42566', '42597', '42628', '42658', '42689', '42719']
+  def test_six_data(), do: [~c"42384", ~c"42415", ~c"42444", ~c"42475", ~c"42505", ~c"42536", ~c"42566", ~c"42597", ~c"42628", ~c"42658", ~c"42689", ~c"42719"]
 
   def test_six_results() do 
     [

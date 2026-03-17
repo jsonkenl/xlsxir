@@ -91,6 +91,41 @@ defmodule Xlsxir do
   end
 
   @doc """
+  Returns the list of worksheet names contained in the specified `.xlsx` file,
+  in workbook order.
+
+  ## Parameters
+  - `path` - file path of a `.xlsx` file type in `string` format
+
+  ## Options
+  - `:extract_to` - Specify how the `.xlsx` content will be extracted before being parsed.
+    `:memory` will extract files to memory, and `:file` to files in the file system
+  - `:extract_base_dir` - when extracting to file, files will be extracted
+     in a sub directory in the `:extract_base_dir` directory. Defaults to
+     `Application.get_env(:xlsxir, :extract_base_dir)` or "temp"
+
+  ## Example
+  List all worksheet names in an example file named `test.xlsx` located in `./test/test_data`:
+
+        iex> {:ok, names} = Xlsxir.sheet_names("./test/test_data/test.xlsx")
+        iex> length(names)
+        11
+        iex> hd(names)
+        "Sheet1"
+  """
+  def sheet_names(path, options \\ []) do
+    case XlsxFile.initialize(path, options) do
+      {:error, _} = error ->
+        error
+
+      xlsx_file ->
+        names = XlsxFile.sheet_names(xlsx_file)
+        XlsxFile.clean(xlsx_file)
+        {:ok, names}
+    end
+  end
+
+  @doc """
   Stream worksheet rows contained in the specified `.xlsx` file.
 
   Cells containing formulas in the worksheet are extracted as either a `string`, `integer` or `float` depending on the resulting value of the cell.
@@ -174,7 +209,7 @@ defmodule Xlsxir do
 
   ## Parameters
   - `path` - file path of a `.xlsx` file type in `string` format
-  - `index` - index of worksheet from within the Excel workbook to be parsed (zero-based index)
+  - `index` - index of worksheet from within the Excel workbook to be parsed (zero-based index), or a `string` worksheet name.
   - `timer` - boolean flag that tracts extraction process time and returns it when set to `true`. Defalut value is `false`.
 
   ## Options
@@ -190,6 +225,15 @@ defmodule Xlsxir do
   Extract first worksheet in an example file named `test.xlsx` located in `./test/test_data`:
 
         iex> {:ok, tid} = Xlsxir.multi_extract("./test/test_data/test.xlsx", 0)
+        iex> Enum.member?(:ets.all, tid)
+        true
+        iex> Xlsxir.close(tid)
+        :ok
+
+  ## Example
+  Extract worksheet by name in an example file named `test.xlsx` located in `./test/test_data`:
+
+        iex> {:ok, tid} = Xlsxir.multi_extract("./test/test_data/test.xlsx", "Sheet1")
         iex> Enum.member?(:ets.all, tid)
         true
         iex> Xlsxir.close(tid)
@@ -222,6 +266,9 @@ defmodule Xlsxir do
 
         iex> Xlsxir.multi_extract("./test/test_data/test.xlsx", 100)
         {:error, "Invalid worksheet index."}
+
+        iex> Xlsxir.multi_extract("./test/test_data/test.xlsx", "NonExistent")
+        {:error, "Worksheet \\\"NonExistent\\\" not found."}
   """
   def multi_extract(path, index \\ nil, timer \\ false, _excel \\ nil, options \\ [])
 
@@ -239,6 +286,10 @@ defmodule Xlsxir do
 
   def multi_extract(path, index, timer, _excel, options) when is_integer(index) do
     extract(path, index, timer, options)
+  end
+
+  def multi_extract(path, name, timer, _excel, options) when is_binary(name) do
+    extract(path, name, timer, options)
   end
 
   @doc """

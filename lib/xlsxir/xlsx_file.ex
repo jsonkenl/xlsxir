@@ -81,6 +81,13 @@ defmodule Xlsxir.XlsxFile do
     end
   end
 
+  def parse_to_ets(%__MODULE__{} = xlsx_file, worksheet_name, timer)
+      when is_binary(worksheet_name) do
+    with {:ok, worksheet_xml_file} <- get_worksheet(xlsx_file, worksheet_name) do
+      parse_to_ets(xlsx_file, worksheet_xml_file, timer)
+    end
+  end
+
   def parse_to_ets(%__MODULE__{} = xlsx_file, %XmlFile{} = worksheet_xml_file, true) do
     start_timestamp = :erlang.timestamp()
     {:ok, tid} = parse_to_ets(xlsx_file, worksheet_xml_file, false)
@@ -146,6 +153,18 @@ defmodule Xlsxir.XlsxFile do
     # Sort worksheets by name (i.e. index)
     |> Enum.sort(&(&1.name <= &2.name))
     |> Enum.map(&parse_to_ets(xlsx_file, &1, timer))
+  end
+
+  @doc """
+  Returns the ordered list of worksheet names from the workbook.
+  """
+  def sheet_names(%__MODULE__{workbook: nil}), do: []
+
+  def sheet_names(%__MODULE__{} = xlsx_file) do
+    case :ets.lookup(xlsx_file.workbook, :sheet_names) do
+      [{:sheet_names, names}] -> names
+      [] -> []
+    end
   end
 
   @doc """
@@ -301,6 +320,24 @@ defmodule Xlsxir.XlsxFile do
   end
 
   defp parse_shared_strings_to_ets({:error, _} = error), do: error
+
+  defp get_worksheet(%__MODULE__{} = xlsx_file, name) when is_binary(name) do
+    case :ets.match(xlsx_file.workbook, {{:sheet_name, name}, :"$1"}) do
+      [[rid]] ->
+        xml_file =
+          Enum.find(xlsx_file.worksheet_xml_files, fn xml_file ->
+            xml_file.name == "sheet#{rid}.xml"
+          end)
+
+        case xml_file do
+          nil -> {:error, "Worksheet \"#{name}\" not found."}
+          %XmlFile{} -> {:ok, xml_file}
+        end
+
+      [] ->
+        {:error, "Worksheet \"#{name}\" not found."}
+    end
+  end
 
   defp get_worksheet(%__MODULE__{} = xlsx_file, index) do
     xml_file =

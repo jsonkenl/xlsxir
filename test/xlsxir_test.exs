@@ -157,4 +157,45 @@ defmodule XlsxirTest do
     assert map["B2"] == "pre 2008"
     assert map["B3"] == "https://msdn.microsoft.com/en-us/library/office/gg278314.aspx"
   end
+
+  test "sheet_names returns all worksheet names" do
+    {:ok, names} = Xlsxir.sheet_names(path())
+    assert length(names) == 11
+    assert hd(names) == "Sheet1"
+    assert List.last(names) == "Sheet11"
+  end
+
+  test "sheet_names returns error for invalid file" do
+    assert {:error, _} = Xlsxir.sheet_names("./test/test_data/test.invalidfile")
+  end
+
+  test "extract by sheet name" do
+    {:ok, pid} = extract(path(), "Sheet1")
+    assert get_list(pid) == [["string one", "string two", 10, 20, {2016, 1, 1}]]
+    close(pid)
+  end
+
+  test "extract second worksheet by name" do
+    {:ok, pid} = extract(path(), "Sheet2")
+    assert get_list(pid) == [[1, 2], [3, 4]]
+    close(pid)
+  end
+
+  test "extract by invalid sheet name returns error" do
+    assert {:error, "Worksheet \"NonExistent\" not found."} =
+             extract(path(), "NonExistent")
+  end
+
+  test "multi_extract by sheet name" do
+    {:ok, tid} = multi_extract(path(), "Sheet1")
+    assert get_list(tid) == [["string one", "string two", 10, 20, {2016, 1, 1}]]
+    close(tid)
+  end
+
+  test "peek by sheet name" do
+    {:ok, pid} = peek(path(), "Sheet9", 10)
+    assert get_cell(pid, "G10") == 8437
+    assert get_info(pid, :rows) == 10
+    close(pid)
+  end
 end

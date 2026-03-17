@@ -21,4 +21,10 @@ defmodule StreamTest do
     # third run because reasons
     assert {:ok, _} = Task.yield( Task.async( fn() -> s |> Stream.run() end ), 2000)
   end
+
+  test "stream by sheet name" do
+    s = stream_list(path(), "Sheet9")
+    assert %Stream{} = s
+    assert 51 == s |> Enum.map(&(&1)) |> length
+  end
 end

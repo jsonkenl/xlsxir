@@ -13,6 +13,7 @@ defmodule Xlsxir.ParseWorksheet do
             num_style: "",
             value: "",
             value_type: nil,
+            skip_text: false,
             max_rows: nil,
             tid: nil
 
@@ -92,16 +93,26 @@ defmodule Xlsxir.ParseWorksheet do
     %{state | value_type: nil}
   end
 
-  def sax_event_handler({:startElement, _, ~c"is", _, _}, state, _, _),
-    do: %{state | value_type: :value}
+  # Phonetic runs (`<rPh>`) carry ruby annotations, not cell text. Skip their `<t>` contents.
+  def sax_event_handler({:startElement, _, ~c"rPh", _, _}, state, _, _),
+    do: %{state | skip_text: true}
+
+  def sax_event_handler({:endElement, _, ~c"rPh", _}, state, _, _),
+    do: %{state | skip_text: false}
 
   def sax_event_handler({:characters, value}, state, _, _) do
     case state do
       nil -> nil
-      %{value_type: :value} -> %{state | value: value}
+      %{skip_text: true} -> state
+      # Rich text inline strings split cell text across multiple `<r><t>` runs,
+      # and SAX character events may arrive in chunks, so accumulate instead of replacing.
+      %{value_type: :value} -> %{state | value: append_value(state.value, value)}
       _ -> state
     end
   end
+
+  defp append_value("", value), do: value
+  defp append_value(prev, value) when is_list(prev) and is_list(value), do: prev ++ value
 
   def sax_event_handler({:endElement, _, ~c"c", _}, %__MODULE__{row: row} = state, excel, _) do
     cell_value = format_cell_value(excel, [state.data_type, state.num_style, state.value])

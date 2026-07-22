@@ -148,6 +148,15 @@ defmodule XlsxirTest do
            ]
   end
 
+  test "parses rich text inline strings, joining runs and skipping phonetic runs" do
+    {:ok, pid} = multi_extract("./test/test_data/rich-inline-str.xlsx", 0)
+
+    assert get_list(pid) == [
+             ["foo bar", "漢字"],
+             [123, "baz"]
+           ]
+  end
+
   test "parses inline strings" do
     {:ok, pid} = multi_extract("test/test_data/noShared.xlsx", 0)
     on_exit(fn -> close(pid) end)

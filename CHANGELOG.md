@@ -1,5 +1,23 @@
 # Change Log
 
+## Unreleased
+
+- Fixed leading empty-cell padding for rows starting in columns such as `AA`
+  and `AB`, following [#132](https://github.com/jsonkenl/xlsxir/pull/132).
+  Materialized lists and MDA maps now retain the correct column positions;
+  cell counts include the inserted `nil` placeholders. Callers compensating
+  for the previous left shift should remove that workaround. Streaming gap
+  behavior is unchanged.
+- Fixed workbook parsing crashes for relationship IDs such as `R1` and
+  `rIdSheet1` by removing unused numeric-ID parsing. Thanks to @coop for
+  [#137](https://github.com/jsonkenl/xlsxir/pull/137), addressing
+  [#106](https://github.com/jsonkenl/xlsxir/issues/106).
+- **Breaking change for parser-state consumers:** sheet maps in
+  `Xlsxir.ParseWorkbook.sheets` now contain only `name` and `sheet_id`; `rid`
+  has been removed. Remove `rid` accesses and pattern matches from callers.
+  `sheet_id` is not a substitute relationship ID. General workbook relationship
+  resolution is still unsupported; worksheet selection and naming are unchanged.
+
 ## 1.6.4
 - Cleaned up several warnings due to Elixir versioning deprecations. Thanks to @michaelst and @getong for contributions. 
 

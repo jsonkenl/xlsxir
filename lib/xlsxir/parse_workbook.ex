@@ -4,7 +4,11 @@ defmodule Xlsxir.ParseWorkbook do
   """
 
   @doc """
-  sheets has multiple sheet map which consists of name, sheet_id and rid
+  sheets has multiple sheet map which consists of name and sheet_id.
+
+  Relationship IDs are ignored. The former `rid` key has been removed from
+  sheet maps; callers inspecting parser state must stop accessing that key.
+  `sheet_id` is workbook metadata, not a replacement relationship identifier.
   """
   defstruct sheets: [], tid: nil
 
@@ -14,7 +18,7 @@ defmodule Xlsxir.ParseWorkbook do
 
   def sax_event_handler({:startElement, _, ~c"sheet", _, xml_attrs}, state) do
     sheet =
-      Enum.reduce(xml_attrs, %{name: nil, sheet_id: nil, rid: nil}, fn attr, sheet ->
+      Enum.reduce(xml_attrs, %{name: nil, sheet_id: nil}, fn attr, sheet ->
         case attr do
           {:attribute, ~c"name", _, _, name} ->
             %{sheet | name: name |> to_string}
@@ -22,11 +26,6 @@ defmodule Xlsxir.ParseWorkbook do
           {:attribute, ~c"sheetId", _, _, sheet_id} ->
             {sheet_id, _} = sheet_id |> to_string |> Integer.parse()
             %{sheet | sheet_id: sheet_id}
-
-          {:attribute, ~c"id", _, _, rid} ->
-            "rId" <> rid = rid |> to_string
-            {rid, _} = Integer.parse(rid)
-            %{sheet | rid: rid}
 
           _ ->
             sheet
